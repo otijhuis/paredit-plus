@@ -74,21 +74,6 @@
         -1
         1))))
 
-(defn locate-chars [ed startloc cs dir]
-  (lazy-seq
-   (loop [loc (find-pos-h ed startloc dir)
-          results '()]
-     (let [next-loc (find-pos-h ed loc dir)
-           cur-char (char-at-loc ed loc)]
-       (cond
-        (comment-or-string? ed loc) (recur next-loc results)
-        (contains? cs cur-char) (if (= next-loc loc)
-                                  (reverse (cons [cur-char loc] results))
-                                  (recur next-loc (cons [cur-char loc] results)))
-        (= next-loc loc) (reverse results)
-        :else (recur next-loc results))))))
-
-;; todo: handle type :string differently for direction
 (defn find-match [ed startloc c]
   (when-let [p (char->pair c)]
     (let [pair-type (:type p)
@@ -100,11 +85,50 @@
         (when-not (empty? chars)
           (let [[char loc] (first chars)]
             (cond
+             (= loc startloc) (recur (rest chars) stack)
              (= char c) (recur (rest chars) (inc stack))
              (= char opposite) (if (= 0 stack)
                                  loc
                                  (recur (rest chars) (dec stack)))
              :else (recur (rest chars) stack))))))))
+
+(defn locate-chars [ed startloc cs dir]
+  (lazy-seq
+   (loop [loc startloc
+          results '()]
+     (let [next-loc (find-pos-h ed loc dir)
+           cur-char (char-at-loc ed loc)]
+       (cond
+        (comment-or-string? ed loc) (recur next-loc results)
+        (contains? cs cur-char) (if (= next-loc loc)
+                                  (reverse (cons [cur-char loc] results))
+                                  (recur next-loc (cons [cur-char loc] results)))
+        (= next-loc loc) (reverse results)
+        :else (recur next-loc results))))))
+
+(defn find-unbalanced [ed startloc cs dir]
+  (lazy-seq
+   (loop [chars (locate-chars ed startloc cs dir)
+          results '()]
+     (if-not (empty? chars)
+       (let [[c loc] (first chars)]
+         (if-let [matchloc (find-match ed loc c)]
+           (if (< (* dir (editor/pos->index ed matchloc)) (* dir (editor/pos->index ed startloc)))
+             (recur (rest chars) (cons [c loc] results))
+             (recur (rest chars) results))
+           (recur (rest chars) (cons [c loc] results))))
+       (reverse results)))))
+
+(defn paredit-kill [ed]
+  (let [startloc (editor/->cursor ed)
+        c (char-at-loc ed startloc)]
+    (cond
+     (contains? (pair-chars :close) c) (notifos/set-msg! "Invalid starting point")
+     (contains? (pair-chars :open) c) (when-let [match-loc (find-match ed startloc c)]
+                                        (editor/replace ed startloc (editor/adjust-loc match-loc 1) ""))
+     :else (when-let [[char loc] (first (find-unbalanced ed startloc (pair-chars :open) -1))]
+             (when-let [match-loc (find-match ed startloc char)]
+               (editor/replace ed startloc match-loc ""))))))
 
 
 (defn wrap-region [ed [startloc endloc] p]
@@ -125,16 +149,6 @@
                  startloc {:line (:line loc) :ch (:start token)}
                  endloc (editor/adjust-loc {:line (:line loc) :ch (:end token)} -1)]
              (wrap-region ed [startloc endloc] p)))))
-
-(defn paredit-kill [ed]
-  (let [startloc (editor/->cursor ed)
-        c (char-at-loc ed startloc)]
-    (if (contains? (pair-chars :open) c)
-      (when-let [match-loc (find-match ed startloc c)]
-        (editor/replace ed startloc (editor/adjust-loc match-loc 1) ""))
-      (when-let [[char loc] (first (locate-chars ed startloc (pair-chars :open) -1))]
-        (when-let [match-loc (find-match ed startloc char)]
-          (editor/replace ed startloc match-loc ""))))))
 
 (cmd/command {:command :paredit-plus.kill
               :desc "Paredit Plus: Kill"
@@ -172,11 +186,13 @@
   (paredit-kill ed))
 
 (defn paredit-test [ed]
-  (editor/->token ed (editor/adjust-loc (editor/->cursor ed) 1)))
+  (apply str (map (fn [[x y]] x) (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) 1))))
 
-(defn test [x] dfgdf ((())))
+(defn paredit-test2 [ed]
+  (apply str (map (fn [[x y] x]) (locate-chars ed (editor/->cursor ed) (pair-chars :open) -1))))
+
 (cmd/command {:command :paredit-plus.test
-              :desc "Paredit Plus: Test"
+              :desc "Paredit Plus: Test (DO NOT USE, FOR DEV ONLY)"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (js/console.log (paredit-test ed))))})

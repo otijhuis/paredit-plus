@@ -2,5 +2,5 @@
  :version "0.0.1"
  :author "otijhuis"
  :source "https://github.com/otijhuis/paredit-plus.git"
- :desc "Paredit Plus integration for Light Table"
+ :desc "Paredit Plus for Light Table"
  :behaviors "paredit-plus.behaviors"}
