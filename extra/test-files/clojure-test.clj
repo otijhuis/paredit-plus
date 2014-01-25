@@ -3,7 +3,7 @@
 ;; This is a comment (yes it is)
 (((+ 2 2))) ; sdfkjsdlfjf
 
-(([ [sdflkj] [sdfsdf] ]))
+(([[sdflkj] [sdfsdf] ]))
 
 " sdjflskdjf
 sdkjf klsdjf klfj
@@ -14,10 +14,15 @@ sdkjf klsdjf klfj
     (this ls a test)))
 
 ;; todo be able to wrap around the string below
-"dfgdg
+("dfgdg
 sdflkjdfd
 g
 dfgdfgdfg"
 
+"sdfsdfsdfsd sdfsdf ")
+
 
 ;; write something like string-bounds
+
+"sdfsf sdf sdflkj
+fsd sd "

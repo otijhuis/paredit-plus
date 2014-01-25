@@ -51,13 +51,13 @@
         c (get l (:ch loc))]
     c))
 
-(defn comment-or-string? [ed loc]
+(defn comment-or-string? [ed loc allow-strings?]
   "Check wether the character at loc is part of a comment or string"
   (if-let [tokentype (editor/->token-type ed (editor/adjust-loc loc 1))]
-    (or
-      (str-contains? tokentype "comment-form")
-      (str-contains? tokentype "comment")
-      (str-contains? tokentype "string"))
+    (cond
+      (str-contains? tokentype "comment-form") false
+      (str-contains? tokentype "comment") true
+      (str-contains? tokentype "string") (when-not allow-strings? true))
     false))
 
 (defn index->pos [ed i]
@@ -84,12 +84,10 @@
                 :backward loc
                 :forward (editor/adjust-loc loc -1))
           (recur next-loc loc))
-        (condp = dir
-              :backward result
-              :forward (editor/adjust-loc result -1))))))
+        result))))
 
 (defn string-bounds [ed l]
-  [(string-boundary ed l -1) (string-boundary ed l 1)])
+  [(string-boundary ed l :backward) (string-boundary ed l :forward)])
 
 (defn find-match [ed startloc c]
   (when-let [p (char->pair c)]
@@ -97,17 +95,19 @@
           type (char-type p c)
           dir (type->dir type)
           opposite (opposite-char c)]
-      (loop [chars (locate-chars ed startloc #{c opposite} dir)
-             stack 0]
-        (when-not (empty? chars)
-          (let [[char loc] (first chars)]
-            (cond
-             (= loc startloc) (recur (rest chars) stack)
-             (= char c) (recur (rest chars) (inc stack))
-             (= char opposite) (if (= 0 stack)
-                                 loc
-                                 (recur (rest chars) (dec stack)))
-             :else (recur (rest chars) stack))))))))
+      (if (= pair-type :string)
+        (first (remove #(= startloc %) (string-bounds ed startloc)))
+        (loop [chars (locate-chars ed startloc #{c opposite} dir)
+                    stack 0]
+               (when-not (empty? chars)
+                 (let [[char loc] (first chars)]
+                   (cond
+                    (= loc startloc) (recur (rest chars) stack)
+                    (= char c) (recur (rest chars) (inc stack))
+                    (= char opposite) (if (= 0 stack)
+                                        loc
+                                        (recur (rest chars) (dec stack)))
+                    :else (recur (rest chars) stack)))))))))
 
 (defn locate-chars [ed startloc cs dir]
   (lazy-seq
@@ -128,7 +128,7 @@
                                           (or (= start (:ch loc)) (= end (:ch loc))))
                                        (recur next-loc (cons [c loc] results))
                                        (recur next-loc results)))
-        (comment-or-string? ed loc) (recur next-loc results)
+        (comment-or-string? ed loc false) (recur next-loc results)
         (contains? cs c) (if (= next-loc loc)
                                   (reverse (cons [c loc] results))
                                   (recur next-loc (cons [c loc] results)))
@@ -174,13 +174,16 @@
     (cond
      (editor/selection? ed) (let [bounds (editor/selection-bounds ed)]
                               (wrap-region ed [(:from bounds) (:to bounds)] p))
-     (comment-or-string? ed loc) (notifos/set-msg! "Illegal context: not available in comment or string")
+     (comment-or-string? ed loc true) (notifos/set-msg! "Illegal context: not available in comment")
+     (comment-or-string? ed loc false) (when-let [bounds (string-bounds ed loc)]
+                                         (wrap-region ed bounds p))
      (char->pair c) (when-let [match-loc (find-match ed loc c)]
                       (wrap-region ed (sort-by #(editor/pos->index ed %) [loc match-loc]) p))
      :else (let [token (editor/->token ed (editor/adjust-loc loc 1))
                  startloc {:line (:line loc) :ch (:start token)}
                  endloc (editor/adjust-loc {:line (:line loc) :ch (:end token)} -1)]
              (wrap-region ed [startloc endloc] p)))))
+
 
 (cmd/command {:command :paredit-plus.kill
               :desc "Paredit Plus: Kill"
@@ -218,10 +221,10 @@
   (string-bounds ed (editor/->cursor ed)))
 
 (defn paredit-test [ed]
-  (editor/->token ed (editor/adjust-loc (editor/->cursor ed) 1)))
+  (editor/->token-type ed (editor/adjust-loc (editor/->cursor ed) 1)))
 
-(defn paredit-test1 [ed]
-  (paredit-kill ed))
+(defn paredit-test [ed]
+  (find-match ed (editor/->cursor ed) "\""))
 
 (defn paredit-test [ed]
   (first (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) :forward)))
