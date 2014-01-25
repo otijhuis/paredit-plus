@@ -13,6 +13,11 @@
             {:type :string :open "\"" :close "\""}
             {:type :vector :open "[" :close "]"}])
 
+(def directions {:backward -1 :forward 1})
+
+(defn dir->int [dir]
+  (get directions dir))
+
 (defn pair-chars [t]
   (set (map t pairs)))
 
@@ -32,8 +37,8 @@
 
 (defn type->dir [t]
   (if (= :open t)
-    1
-    -1))
+    :forward
+    :backward))
 
 (defn opposite-char [c]
   (when-let [p (char->pair c)]
@@ -66,13 +71,25 @@
        {:line (.-line pos)
         :ch (.-ch pos)})))
 
-(defn string-dir [ed loc]
-  (let [token (editor/->token ed (editor/adjust-loc loc 1))
-        token-end (editor/adjust-loc {:line (:line loc) :ch (:end token)} -1)]
-    (when (= (:type token) "string")
-      (if (<= (:ch loc) (:ch token-end))
-        -1
-        1))))
+(defn string-boundary [ed l dir]
+  (loop [loc l
+         result nil]
+    (let [token-type (editor/->token-type ed (editor/adjust-loc loc 1))
+          next-loc (find-pos-h ed loc (dir->int dir))]
+      (if (and
+           token-type
+           (str-contains? token-type "string") )
+        (if (= next-loc loc)
+          (condp = dir
+                :backward loc
+                :forward (editor/adjust-loc loc -1))
+          (recur next-loc loc))
+        (condp = dir
+              :backward result
+              :forward (editor/adjust-loc result -1))))))
+
+(defn string-bounds [ed l]
+  [(string-boundary ed l -1) (string-boundary ed l 1)])
 
 (defn find-match [ed startloc c]
   (when-let [p (char->pair c)]
@@ -96,15 +113,28 @@
   (lazy-seq
    (loop [loc startloc
           results '()]
-     (let [next-loc (find-pos-h ed loc dir)
-           cur-char (char-at-loc ed loc)]
+     (let [next-loc (find-pos-h ed loc (dir->int dir))
+           c (char-at-loc ed loc)
+           pair (char->pair c)]
        (cond
+        (and
+         pair
+         (= (:type pair) :string)) (let [token (editor/->token ed (editor/adjust-loc loc 1))
+                                         t (:type token)
+                                         start (:start token)
+                                         end (- (:end token) 1)]
+                                     (if (and
+                                          (= t "string")
+                                          (or (= start (:ch loc)) (= end (:ch loc))))
+                                       (recur next-loc (cons [c loc] results))
+                                       (recur next-loc results)))
         (comment-or-string? ed loc) (recur next-loc results)
-        (contains? cs cur-char) (if (= next-loc loc)
-                                  (reverse (cons [cur-char loc] results))
-                                  (recur next-loc (cons [cur-char loc] results)))
+        (contains? cs c) (if (= next-loc loc)
+                                  (reverse (cons [c loc] results))
+                                  (recur next-loc (cons [c loc] results)))
         (= next-loc loc) (reverse results)
         :else (recur next-loc results))))))
+
 
 (defn find-unbalanced [ed startloc cs dir]
   (lazy-seq
@@ -113,7 +143,9 @@
      (if-not (empty? chars)
        (let [[c loc] (first chars)]
          (if-let [matchloc (find-match ed loc c)]
-           (if (< (* dir (editor/pos->index ed matchloc)) (* dir (editor/pos->index ed startloc)))
+           (if (<
+                (* (dir->int dir) (editor/pos->index ed matchloc))
+                (* (dir->int dir) (editor/pos->index ed startloc)))
              (recur (rest chars) (cons [c loc] results))
              (recur (rest chars) results))
            (recur (rest chars) (cons [c loc] results))))
@@ -126,7 +158,7 @@
      (contains? (pair-chars :close) c) (notifos/set-msg! "Invalid starting point")
      (contains? (pair-chars :open) c) (when-let [match-loc (find-match ed startloc c)]
                                         (editor/replace ed startloc (editor/adjust-loc match-loc 1) ""))
-     :else (when-let [[char loc] (first (find-unbalanced ed startloc (pair-chars :open) -1))]
+     :else (when-let [[char loc] (first (find-unbalanced ed startloc (pair-chars :open) :backward))]
              (when-let [match-loc (find-match ed startloc char)]
                (editor/replace ed startloc match-loc ""))))))
 
@@ -182,14 +214,20 @@
 ;; -------------------------------- TEST AREA -----------------------------------------
 
 
+(defn paredit-test [ed]
+  (string-bounds ed (editor/->cursor ed)))
+
+(defn paredit-test [ed]
+  (editor/->token ed (editor/adjust-loc (editor/->cursor ed) 1)))
+
 (defn paredit-test1 [ed]
   (paredit-kill ed))
 
 (defn paredit-test [ed]
-  (apply str (map (fn [[x y]] x) (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) 1))))
+  (first (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) :forward)))
 
-(defn paredit-test2 [ed]
-  (apply str (map (fn [[x y] x]) (locate-chars ed (editor/->cursor ed) (pair-chars :open) -1))))
+(defn paredit-test [ed]
+  (apply str (map (fn [[x y]] x) (locate-chars ed (editor/->cursor ed) (pair-chars :close) :forward))))
 
 (cmd/command {:command :paredit-plus.test
               :desc "Paredit Plus: Test (DO NOT USE, FOR DEV ONLY)"

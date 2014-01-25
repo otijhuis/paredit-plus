@@ -3,7 +3,7 @@
 ;; This is a comment (yes it is)
 (((+ 2 2))) ; sdfkjsdlfjf
 
-(([[sdflkj] [sdfsdf] ]))
+(([ [sdflkj] [sdfsdf] ]))
 
 " sdjflskdjf
 sdkjf klsdjf klfj
