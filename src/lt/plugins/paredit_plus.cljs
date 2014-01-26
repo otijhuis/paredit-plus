@@ -212,6 +212,29 @@
                                     (editor/replace ed l s)
                                     (editor/move-cursor ed (editor/adjust-loc l 1)))))))))
 
+;; Works differently than the emacs version. Currently very greedy
+;; Will join the first matching sexps it finds, even if they are not next to eachother
+;; In case of strings it will remove the quotes
+;; Not sure I mind the fact it's greedy. Should behave like expected during normal usage
+;; Only when used in situations which are normally not allowed it behaves differently
+(defn paredit-join-sexps [ed]
+  (let [l (editor/->cursor ed)
+        [lc ll] (first (locate-chars ed l (pair-chars :close) :backward))
+        [rc rl] (first (locate-chars ed l (pair-chars :open) :forward))]
+    (if (and lc rc)
+      (if (= lc (opposite-char rc))
+        (editor/operation ed (fn []
+                               (editor/replace ed rl (editor/adjust-loc rl 1) "")
+                               (editor/replace ed ll (editor/adjust-loc ll 1) "")
+                               (editor/indent-lines ed ll rl "smart")))
+        (notifos/set-msg! "Mismatched sexps")))))
+
+(cmd/command {:command :paredit-plus.join.sexps
+              :desc "Paredit Plus: Join Sexps"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (paredit-join-sexps ed)))})
+
 (cmd/command {:command :paredit-plus.split.sexp
               :desc "Paredit Plus: Split Sexp"
               :exec (fn []

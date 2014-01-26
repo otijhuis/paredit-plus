@@ -15,4 +15,8 @@
 ;; todo be able to wrap around the string below
 ;; write something like string-bounds
 
-(ddd (sdsdd sdsdfsd sdfsdf) (sdlsd sdsd sd))
+(ddd (ds fsdf sdf) (sdsdd sdsdfsd sdfsdf) adsadf sdf
+     (sdlsd sdsd sd))
+
+(first form)
+(second form)
