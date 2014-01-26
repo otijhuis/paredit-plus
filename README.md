@@ -54,6 +54,20 @@ All the wrap commands support selections.
 **Paredit Plus: Wrap Curly**  
 **Paredit Plus: Wrap Quotes**  
 
+##Vim mode##
+
+I have the following added to my *user.behaviors* file for easy usage in vim mode:
+
+		;; The editor tag is applied to all editors
+		     :editor [:lt.objs.editor/no-wrap
+		              :lt.plugins.vim/activate-vim
+		              (:lt.plugins.vim/map-keys {"\\wr" ":ltexec paredit-plus.wrap.round"
+		                                         "\\ws" ":ltexec paredit-plus.wrap.square"
+		                                         "\\wc" ":ltexec paredit-plus.wrap.curly"
+		                                         "\\wq" ":ltexec paredit-plus.wrap.quote"
+		                                         "\\bs" ":ltexec paredit-plus.splice.sexp.killing.backward"
+		                                         "\\fs" ":ltexec paredit-plus.splice.sexp.killing.forward"})
+
 ##Known issues##
 
 - Has problems with strings that start with whitespace. This has to do with a clojure-mode.js bug. Already created an issue for this.
