@@ -89,20 +89,20 @@
 (defn string-bounds [ed l]
   [(string-boundary ed l :backward) (string-boundary ed l :forward)])
 
-(defn find-match [ed startloc c]
+(defn find-match [ed l c]
   (when-let [p (char->pair c)]
     (let [pair-type (:type p)
           type (char-type p c)
           dir (type->dir type)
           opposite (opposite-char c)]
       (if (= pair-type :string)
-        (first (remove #(= startloc %) (string-bounds ed startloc)))
-        (loop [chars (locate-chars ed startloc #{c opposite} dir)
+        (first (remove #(= l %) (string-bounds ed l)))
+        (loop [chars (locate-chars ed l #{c opposite} dir)
                     stack 0]
                (when-not (empty? chars)
                  (let [[char loc] (first chars)]
                    (cond
-                    (= loc startloc) (recur (rest chars) stack)
+                    (= loc l) (recur (rest chars) stack)
                     (= char c) (recur (rest chars) (inc stack))
                     (= char opposite) (if (= 0 stack)
                                         loc
@@ -127,9 +127,9 @@
                                     (lazy-seq (locate-chars ed next-loc cs dir))))
       (comment-or-string? ed l false) (lazy-seq (locate-chars ed next-loc cs dir))
       (contains? cs c) (if (= next-loc l)
-                         [c l]
+                         (lazy-seq (cons [c l] '()))
                          (lazy-seq (cons [c l] (locate-chars ed next-loc cs dir))))
-      (= next-loc l) []
+      (= next-loc l) '()
       :else (lazy-seq (locate-chars ed next-loc cs dir)))))
 
 
@@ -146,7 +146,7 @@
              (lazy-seq (cons [c loc] (find-unbalanced ed (rest locations) l cs dir)))
              (lazy-seq (find-unbalanced ed (rest locations) l cs dir)))
            (lazy-seq (cons [c loc] (find-unbalanced ed (rest locations) l cs dir)))))
-       [])))
+       '())))
 
 ;; TODO delete comments and empty lines
 (defn paredit-kill [ed]
@@ -289,10 +289,10 @@
 
 
 (defn paredit-test [ed]
-  (string-bounds ed (editor/->cursor ed)))
+  (find-pos-h ed (editor/->cursor ed) -1))
 
 (defn paredit-test [ed]
-  (editor/->token ed (editor/adjust-loc (editor/->cursor ed) 1)))
+  (editor/->token-type ed (editor/->cursor ed)))
 
 (defn paredit-test [ed]
   (find-match ed (editor/->cursor ed) ")"))
@@ -304,7 +304,7 @@
   (apply str (map (fn [[x y]] x) (take 15 (locate-chars ed (editor/->cursor ed) (pair-chars :close) :forward)))))
 
 (defn paredit-test [ed]
-  (apply str (map (fn [[x y]] x) (take 1 (locate-chars ed (editor/->cursor ed) (pair-chars :open) :backward)))))
+  (apply str (map (fn [[x y]] (str x "[" (:line y) ":" (:ch y) "]")) (take 15 (locate-chars ed (editor/->cursor ed) #{")" "("} :backward)))))
 
 (cmd/command {:command :paredit-plus.test
               :desc "Paredit Plus: Test (DO NOT USE, FOR DEV ONLY)"
