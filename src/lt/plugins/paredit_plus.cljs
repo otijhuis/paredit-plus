@@ -202,6 +202,22 @@
                               (editor/replace ed (editor/->cursor ed) (editor/adjust-loc loc 1) "")
                               (editor/replace ed match-loc (editor/adjust-loc match-loc 1) "")))))))
 
+(defn paredit-split-sexp [ed]
+  (let [l (editor/->cursor ed)]
+    (when-let [[c loc] (first (find-unbalanced ed l (pair-chars :close) :forward))]
+            (when-let [match-loc (find-match ed loc c)]
+              (let [p (char->pair c)
+                    s (str (:close p) " " (:open p))]
+                (editor/operation ed (fn []
+                                    (editor/replace ed l s)
+                                    (editor/move-cursor ed (editor/adjust-loc l 1)))))))))
+
+(cmd/command {:command :paredit-plus.split.sexp
+              :desc "Paredit Plus: Split Sexp"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (paredit-split-sexp ed)))})
+
 (cmd/command {:command :paredit-plus.splice.sexp.killing.forward
               :desc "Paredit Plus: Splice Sexp Killing Forward"
               :exec (fn []
