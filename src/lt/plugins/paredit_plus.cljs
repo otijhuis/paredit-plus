@@ -151,16 +151,16 @@
            (recur (rest chars) (cons [c loc] results))))
        (reverse results)))))
 
+;; TODO delete comments and empty lines
 (defn paredit-kill [ed]
   (let [startloc (editor/->cursor ed)
         c (char-at-loc ed startloc)]
     (cond
-     (contains? (pair-chars :close) c) (notifos/set-msg! "Invalid starting point")
-     (contains? (pair-chars :open) c) (when-let [match-loc (find-match ed startloc c)]
-                                        (editor/replace ed startloc (editor/adjust-loc match-loc 1) ""))
-     :else (when-let [[char loc] (first (find-unbalanced ed startloc (pair-chars :open) :backward))]
-             (when-let [match-loc (find-match ed startloc char)]
-               (editor/replace ed startloc match-loc ""))))))
+     (contains? #{"}" "]" ")"} c) (notifos/set-msg! "Invalid starting point")
+     :else (if-let [[char loc] (first (find-unbalanced ed startloc (pair-chars :close) :forward))]
+             (editor/replace ed startloc loc "")
+             (when-let [match-loc (find-match ed startloc c)]
+               (editor/replace ed startloc (editor/adjust-loc match-loc 1) ""))))))
 
 
 (defn wrap-region [ed [startloc endloc] p]
@@ -184,6 +184,41 @@
                  endloc (editor/adjust-loc {:line (:line loc) :ch (:end token)} -1)]
              (wrap-region ed [startloc endloc] p)))))
 
+(defn paredit-splice-sexp [ed]
+  (when-let [[c loc] (first (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) :forward))]
+    (when-let [match-loc (find-match ed loc c)]
+      (editor/operation ed (fn []
+                             (editor/replace ed loc (editor/adjust-loc loc 1) "")
+                             (editor/replace ed match-loc (editor/adjust-loc match-loc 1) ""))))))
+
+(defn paredit-splice-sexp-kill [ed dir]
+  (when-let [[c loc] (first (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) :forward))]
+    (when-let [match-loc (find-match ed loc c)]
+      (condp = dir
+        :backward (editor/operation ed (fn []
+                              (editor/replace ed loc (editor/adjust-loc loc 1) "")
+                              (editor/replace ed match-loc (editor/->cursor ed) "")))
+        :forward (editor/operation ed (fn []
+                              (editor/replace ed (editor/->cursor ed) (editor/adjust-loc loc 1) "")
+                              (editor/replace ed match-loc (editor/adjust-loc match-loc 1) "")))))))
+
+(cmd/command {:command :paredit-plus.splice.sexp.killing.forward
+              :desc "Paredit Plus: Splice Sexp Killing Forward"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (paredit-splice-sexp-kill ed :forward)))})
+
+(cmd/command {:command :paredit-plus.splice.sexp.killing.backward
+              :desc "Paredit Plus: Splice Sexp Killing Backward"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (paredit-splice-sexp-kill ed :backward)))})
+
+(cmd/command {:command :paredit-plus.splice.sexp
+              :desc "Paredit Plus: Splice Sexp"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (paredit-splice-sexp ed)))})
 
 (cmd/command {:command :paredit-plus.kill
               :desc "Paredit Plus: Kill"
@@ -224,10 +259,10 @@
   (editor/->token-type ed (editor/adjust-loc (editor/->cursor ed) 1)))
 
 (defn paredit-test [ed]
-  (find-match ed (editor/->cursor ed) "\""))
+  (find-match ed (editor/->cursor ed) ")"))
 
 (defn paredit-test [ed]
-  (first (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) :forward)))
+  (apply str (map (fn [[x y]] x) (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) :forward))))
 
 (defn paredit-test [ed]
   (apply str (map (fn [[x y]] x) (locate-chars ed (editor/->cursor ed) (pair-chars :close) :forward))))

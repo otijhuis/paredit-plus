@@ -3,26 +3,16 @@
 ;; This is a comment (yes it is)
 (((+ 2 2))) ; sdfkjsdlfjf
 
-(([[sdflkj] [sdfsdf] ]))
+(([[sdflk j] [sdfsdf] ]))
 
-" sdjflskdjf
-sdkjf klsdjf klfj
-"
+"a " " asd"
 
 (defn [x]
-  (let [xcxcl "xcvxc"]
+  (let [xcxcl
+        "xcvxc"]
     (this ls a test)))
 
 ;; todo be able to wrap around the string below
-("dfgdg
-sdflkjdfd
-g
-dfgdfgdfg"
-
-"sdfsdfsdfsd sdfsdf ")
-
-
 ;; write something like string-bounds
 
-"sdfsf sdf sdflkj
-fsd sd "
+(ddd (sdsdd sdsdfsd sdfsdf) (sdlsd sdsd sd))
