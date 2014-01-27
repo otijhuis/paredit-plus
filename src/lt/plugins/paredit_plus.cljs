@@ -3,9 +3,7 @@
             [lt.objs.editor :as editor]
             [lt.objs.editor.pool :as pool]
             [lt.objs.command :as cmd]
-            [lt.ojbs.console :as console]
             [lt.objs.notifos :as notifos]
-            [lt.objs.statusbar :as status]
             [lt.util.cljs :refer [str-contains?]]))
 
 (def pairs [{:type :list :open "(" :close ")"}
