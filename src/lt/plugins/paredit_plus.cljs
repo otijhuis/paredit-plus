@@ -283,31 +283,3 @@
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-wrap-with-pair ed (char->pair "\""))))})
-;; -------------------------------- TEST AREA -----------------------------------------
-
-
-(defn paredit-test [ed]
-  (find-pos-h ed (editor/->cursor ed) -1))
-
-(defn paredit-test [ed]
-  (editor/->token-type ed (editor/->cursor ed)))
-
-(defn paredit-test [ed]
-  (find-match ed (editor/->cursor ed) ")"))
-
-(defn paredit-test [ed]
-  (apply str (map (fn [[x y]] x) (take 1 (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) :forward)))))
-
-(defn paredit-test [ed]
-  (apply str (map (fn [[x y]] x) (take 15 (locate-chars ed (editor/->cursor ed) (pair-chars :close) :forward)))))
-
-(defn paredit-test [ed]
-  (apply str (map (fn [[x y]] (str x "[" (:line y) ":" (:ch y) "]")) (take 15 (locate-chars ed (editor/->cursor ed) #{")" "("} :backward)))))
-
-(cmd/command {:command :paredit-plus.test
-              :desc "Paredit Plus: Test (DO NOT USE, FOR DEV ONLY)"
-              :exec (fn []
-                      (when-let [ed (pool/last-active)]
-                        (js/console.log (paredit-test ed))))})
-
-;@cmd/manager
