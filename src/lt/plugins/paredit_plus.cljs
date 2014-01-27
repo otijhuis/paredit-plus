@@ -239,31 +239,31 @@
                                (editor/indent-lines ed ll rl "smart")))
         (notifos/set-msg! "Mismatched sexps")))))
 
-(cmd/command {:command :paredit-plus.join.sexps
+(cmd/command {:command :paredit-plus.join-sexps
               :desc "Paredit Plus: Join Sexps"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-join-sexps ed)))})
 
-(cmd/command {:command :paredit-plus.split.sexp
+(cmd/command {:command :paredit-plus.split-sexp
               :desc "Paredit Plus: Split Sexp"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-split-sexp ed)))})
 
-(cmd/command {:command :paredit-plus.splice.sexp.killing.forward
+(cmd/command {:command :paredit-plus.splice-sexp-killing-forward
               :desc "Paredit Plus: Splice Sexp Killing Forward"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-splice-sexp-kill ed :forward)))})
 
-(cmd/command {:command :paredit-plus.splice.sexp.killing.backward
+(cmd/command {:command :paredit-plus.splice-sexp-killing-backward
               :desc "Paredit Plus: Splice Sexp Killing Backward"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-splice-sexp-kill ed :backward)))})
 
-(cmd/command {:command :paredit-plus.splice.sexp
+(cmd/command {:command :paredit-plus.splice-sexp
               :desc "Paredit Plus: Splice Sexp"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
@@ -275,26 +275,26 @@
                       (when-let [ed (pool/last-active)]
                         (paredit-kill ed)))})
 
-(cmd/command {:command :paredit-plus.wrap.round
+(cmd/command {:command :paredit-plus.wrap-round
               :desc "Paredit Plus: Wrap Round"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-wrap-with-pair ed (char->pair "("))))})
 
-(cmd/command {:command :paredit-plus.wrap.square
+(cmd/command {:command :paredit-plus.wrap-square
               :desc "Paredit Plus: Wrap Square"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-wrap-with-pair ed (char->pair "["))))})
 
-(cmd/command {:command :paredit-plus.wrap.curly
+(cmd/command {:command :paredit-plus.wrap-curly
               :desc "Paredit Plus: Wrap Curly"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-wrap-with-pair ed (char->pair "{"))))})
 
-(cmd/command {:command :paredit-plus.wrap.quotes
-              :desc "Paredit Plus: Wrap Quotes"
+(cmd/command {:command :paredit-plus.wrap-quote
+              :desc "Paredit Plus: Wrap Quote"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-wrap-with-pair ed (char->pair "\""))))})
