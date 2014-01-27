@@ -146,17 +146,32 @@
            (lazy-seq (cons [c loc] (find-unbalanced ed (rest locations) l cs dir)))))
        '())))
 
-;; TODO delete comments and empty lines
 (defn paredit-kill [ed]
   (let [startloc (editor/->cursor ed)
-        c (char-at-loc ed startloc)]
-    (cond
-     (contains? #{"}" "]" ")"} c) (notifos/set-msg! "Invalid starting point")
-     :else (if-let [[char loc] (first (find-unbalanced ed startloc (pair-chars :close) :forward))]
-             (editor/replace ed startloc loc "")
-             (when-let [match-loc (find-match ed startloc c)]
-               (editor/replace ed startloc (editor/adjust-loc match-loc 1) ""))))))
-
+        c (char-at-loc ed startloc)
+        all-pair-chars (clojure.set/union (pair-chars :open) (pair-chars :close))]
+    (if (contains? all-pair-chars c)
+      (when-let [matchloc (find-match ed startloc c)]
+                                    (if (> (editor/pos->index ed matchloc) (editor/pos->index ed startloc))
+                                      (editor/replace ed startloc (editor/adjust-loc matchloc 1) "")
+                                      (editor/replace ed (editor/adjust-loc startloc 1) matchloc "")))
+     (let [line (:line startloc)
+                 chars (take-while (fn [[c loc]] (= line (:line loc))) (locate-chars ed startloc all-pair-chars :forward))]
+             (if (empty? chars)
+               (editor/operation ed (fn []
+                                   (cmd/exec! :editor.kill-line)
+                                   (editor/move-cursor ed (editor/adjust-loc startloc -1))))
+               (loop [chars chars]
+                 (if chars
+                   (let [[c loc] (first chars)
+                         matchloc (find-match ed loc c)
+                         startloc-index (editor/pos->index ed startloc)
+                         matchloc-index (editor/pos->index ed matchloc)]
+                     (cond
+                      (< matchloc-index startloc-index) (editor/replace ed startloc loc "")
+                      (> (:line matchloc) (:line loc)) (editor/replace ed startloc (editor/adjust-loc matchloc 1) "")
+                      :else (recur (next chars)))))))
+     ))))
 
 (defn wrap-region [ed [startloc endloc] p]
   (editor/operation ed (fn []
