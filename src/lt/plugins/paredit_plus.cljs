@@ -49,12 +49,13 @@
         c (get l (:ch loc))]
     c))
 
-(defn comment-or-string? [ed loc allow-strings?]
+(defn comment|string|char? [ed loc allow-strings?]
   "Check wether the character at loc is part of a comment or string"
   (if-let [tokentype (editor/->token-type ed (editor/adjust-loc loc 1))]
     (cond
       (str-contains? tokentype "comment-form") false
       (str-contains? tokentype "comment") true
+      (str-contains? tokentype "char") true
       (str-contains? tokentype "string") (when-not allow-strings? true))
     false))
 
@@ -123,7 +124,7 @@
                                        (or (= start (:ch l)) (= end (:ch l))))
                                     (lazy-seq (cons [c l] (locate-chars ed next-loc cs dir)))
                                     (lazy-seq (locate-chars ed next-loc cs dir))))
-      (comment-or-string? ed l false) (lazy-seq (locate-chars ed next-loc cs dir))
+      (comment|string|char? ed l false) (lazy-seq (locate-chars ed next-loc cs dir))
       (contains? cs c) (if (= next-loc l)
                          (lazy-seq (cons [c l] '()))
                          (lazy-seq (cons [c l] (locate-chars ed next-loc cs dir))))
@@ -184,8 +185,8 @@
     (cond
      (editor/selection? ed) (let [bounds (editor/selection-bounds ed)]
                               (wrap-region ed [(:from bounds) (:to bounds)] p))
-     (comment-or-string? ed loc true) (notifos/set-msg! "Illegal context: not available in comment")
-     (comment-or-string? ed loc false) (when-let [bounds (string-bounds ed loc)]
+     (comment|string|char? ed loc true) (notifos/set-msg! "Illegal context: not available in comments or escaped char")
+     (comment|string|char? ed loc false) (when-let [bounds (string-bounds ed loc)]
                                          (wrap-region ed bounds p))
      (char->pair c) (when-let [match-loc (find-match ed loc c)]
                       (wrap-region ed (sort-by #(editor/pos->index ed %) [loc match-loc]) p))
