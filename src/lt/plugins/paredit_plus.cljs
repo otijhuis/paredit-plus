@@ -279,6 +279,34 @@
                                (editor/indent-lines ed ll rl "smart")))
         (notifos/set-msg! "Mismatched sexps")))))
 
+(defn paredit-forward-delete [ed]
+  (let [loc (editor/->cursor ed)
+        c (char-at-loc ed loc)
+        nc (char-at-loc ed (editor/adjust-loc loc 1))
+        pair (char->pair c)
+        tokentype (editor/->token-type ed loc)]
+    (cond
+     (and tokentype
+          (str-contains? tokentype "comment")) (if nc
+          (editor/replace ed loc (editor/adjust-loc loc 1) "")
+          (editor/operation ed (fn []
+                                 (editor/replace ed loc (editor/adjust-loc loc 1) "")
+                                 (editor/move-cursor ed (editor/adjust-loc loc -1) ""))))
+     (escaped-char? ed loc) (editor/replace ed (editor/adjust-loc loc 1) (editor/adjust-loc loc -1) "")
+     (escapes-char? ed loc) (editor/replace ed loc (editor/adjust-loc loc 2) "")
+     pair (when nc
+            (editor/move-cursor ed (editor/adjust-loc loc 1)))
+     nc (editor/replace ed loc (editor/adjust-loc loc 1) "")
+     :else (editor/operation ed (fn []
+                                 (editor/replace ed loc (editor/adjust-loc loc 1) "")
+                                 (editor/move-cursor ed (editor/adjust-loc loc -1) ""))))))
+
+(cmd/command {:command :paredit-plus.forward-delete
+              :desc "Paredit Plus: Forward Delete"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (paredit-forward-delete ed)))})
+
 (cmd/command {:command :paredit-plus.join-sexps
               :desc "Paredit Plus: Join Sexps"
               :exec (fn []
