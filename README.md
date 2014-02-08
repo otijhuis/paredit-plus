@@ -1,15 +1,20 @@
-##Paredit-Plus for Light Table
+##Paredit-Plus for Light Table##
 
 Additional Paredit functionality for Light Table. It aims to add Paredit functions to Light Table which aren't supported (at least not yet) in the already available Paredit plugin.
 
-*This is to be considered **ALPHA** software. While I'm already using it myself it will likely have some rough edges and it definitely needs some cleaning up/refactoring. That said I'd really appreciate feedback and some testing help.
+*While I'm already using it myself it will likely have some rough edges and it definitely needs some cleaning up/refactoring. That said I'd really appreciate feedback and some testing help.
 *
 
 ##Installation##
 
 Clone this repository into your Light Table plugins folder.
 
-##Commands##  
+##Commands## 
+
+###Delete###
+
+**Paredit Plus: Forward Delete**
+**Paredit Plus: Backward Delete**
   
 ###Split/Join###
 
