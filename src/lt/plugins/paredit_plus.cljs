@@ -306,11 +306,36 @@
                                  (editor/replace ed loc (editor/adjust-loc loc 1) "")
                                  (editor/move-cursor ed (editor/adjust-loc loc -1) ""))))))
 
+(defn paredit-backward-delete [ed]
+  (let [loc (editor/->cursor ed)
+        ploc (editor/adjust-loc loc -1)
+        nloc (editor/adjust-loc loc 1)
+        c (char-at-loc ed loc)
+        pc (char-at-loc ed (editor/adjust-loc loc -1))
+        tokentype (editor/->token-type ed ploc)]
+    (cond
+     (not pc) (editor/replace ed loc (find-pos-h ed loc -1) "")
+     (and tokentype
+          (str-contains? tokentype "comment")) (editor/replace ed loc ploc "")
+     (escaped-char? ed ploc) (editor/replace ed loc (editor/adjust-loc loc -2) "")
+     (escapes-char? ed ploc) (editor/replace ed nloc ploc "")
+     (contains? (pair-chars :open) pc) (if (= c (opposite-char pc))
+                                         (editor/replace ed nloc ploc "")
+                                         (editor/move-cursor ed ploc))
+     (contains? (pair-chars :close) pc) (editor/move-cursor ed ploc)
+     :else (editor/replace ed loc ploc ""))))
+
 (cmd/command {:command :paredit-plus.forward-delete
               :desc "Paredit Plus: Forward Delete"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-forward-delete ed)))})
+
+(cmd/command {:command :paredit-plus.backward-delete
+              :desc "Paredit Plus: Backward Delete"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (paredit-backward-delete ed)))})
 
 (cmd/command {:command :paredit-plus.join-sexps
               :desc "Paredit Plus: Join Sexps"
