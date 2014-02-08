@@ -78,6 +78,26 @@
 (def loc<=
   (loc-compare-fn <=))
 
+(defn escaped-char? [ed loc]
+  (loop [loc (editor/adjust-loc loc -1)
+         result 0]
+    (let [[ch line] ((juxt :ch :line) loc)
+          c (char-at-loc ed loc)]
+      (if (< ch 0)
+        (odd? result)
+        (if (= "\\" c)
+          (recur (editor/adjust-loc loc -1) (inc result))
+          (odd? result))))))
+
+(defn escapes-char? [ed loc]
+  (if
+    (and
+     (= "\\" (char-at-loc ed loc))
+     (not (escaped-char? ed loc))
+     (char-at-loc ed (editor/adjust-loc loc 1)))
+    true
+    false))
+
 (defn find-pos-h
   ([ed loc amount]
      (find-pos-h ed loc amount :char false))
