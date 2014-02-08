@@ -283,6 +283,7 @@
   (let [loc (editor/->cursor ed)
         c (char-at-loc ed loc)
         nc (char-at-loc ed (editor/adjust-loc loc 1))
+        pc (char-at-loc ed (editor/adjust-loc loc -1))
         pair (char->pair c)
         tokentype (editor/->token-type ed loc)]
     (cond
@@ -294,8 +295,12 @@
                                  (editor/move-cursor ed (editor/adjust-loc loc -1) ""))))
      (escaped-char? ed loc) (editor/replace ed (editor/adjust-loc loc 1) (editor/adjust-loc loc -1) "")
      (escapes-char? ed loc) (editor/replace ed loc (editor/adjust-loc loc 2) "")
-     pair (when nc
-            (editor/move-cursor ed (editor/adjust-loc loc 1)))
+     pair (cond
+           (and
+            (contains? (pair-chars :close) c)
+            (not (escaped-char? ed loc))
+            (= pc (opposite-char c))) (editor/replace ed (editor/adjust-loc loc 1) (editor/adjust-loc loc -1) "")
+           nc (editor/move-cursor ed (editor/adjust-loc loc 1)))
      nc (editor/replace ed loc (editor/adjust-loc loc 1) "")
      :else (editor/operation ed (fn []
                                  (editor/replace ed loc (editor/adjust-loc loc 1) "")
