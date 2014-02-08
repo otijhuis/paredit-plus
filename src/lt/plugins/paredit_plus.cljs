@@ -62,6 +62,22 @@
 (defn index->pos [ed i]
   (.posFromIndex (editor/->cm-ed ed) i))
 
+(defn- loc-compare-fn [f]
+  (fn [ed & locs]
+    (apply f (map #(editor/pos->index ed %) locs))))
+
+(def loc<
+  (loc-compare-fn <))
+
+(def loc>
+  (loc-compare-fn >))
+
+(def loc>=
+  (loc-compare-fn >=))
+
+(def loc<=
+  (loc-compare-fn <=))
+
 (defn find-pos-h
   ([ed loc amount]
      (find-pos-h ed loc amount :char false))
@@ -153,26 +169,29 @@
         all-pair-chars (clojure.set/union (pair-chars :open) (pair-chars :close))]
     (if (contains? all-pair-chars c)
       (when-let [matchloc (find-match ed startloc c)]
-                                    (if (> (editor/pos->index ed matchloc) (editor/pos->index ed startloc))
-                                      (editor/replace ed startloc (editor/adjust-loc matchloc 1) "")
-                                      (editor/replace ed (editor/adjust-loc startloc 1) matchloc "")))
-     (let [line (:line startloc)
-                 chars (take-while (fn [[c loc]] (= line (:line loc))) (locate-chars ed startloc all-pair-chars :forward))]
-             (if (empty? chars)
-               (editor/operation ed (fn []
-                                   (cmd/exec! :editor.kill-line)
-                                   (editor/move-cursor ed (editor/adjust-loc startloc -1))))
-               (loop [chars chars]
-                 (if chars
-                   (let [[c loc] (first chars)
-                         matchloc (find-match ed loc c)
-                         startloc-index (editor/pos->index ed startloc)
-                         matchloc-index (editor/pos->index ed matchloc)]
-                     (cond
-                      (< matchloc-index startloc-index) (editor/replace ed startloc loc "")
-                      (> (:line matchloc) (:line loc)) (editor/replace ed startloc (editor/adjust-loc matchloc 1) "")
-                      :else (recur (next chars)))))))
-     ))))
+        (if (> (editor/pos->index ed matchloc) (editor/pos->index ed startloc))
+          (editor/replace ed startloc (editor/adjust-loc matchloc 1) "")
+          (editor/replace ed (editor/adjust-loc startloc 1) matchloc "")))
+      (let [line (:line startloc)
+            chars (take-while (fn [[c loc]] (= line (:line loc))) (locate-chars ed startloc all-pair-chars :forward))]
+        (if (empty? chars)
+          (editor/operation ed (fn []
+                                 (cmd/exec! :editor.kill-line)
+                                 (editor/move-cursor ed (editor/adjust-loc startloc -1))))
+          (if-let [kl (some (fn [[c loc]]
+                              (when-let [mloc (find-match ed loc c)]
+                                (when (loc> ed startloc mloc)
+                                  loc))) (filter (fn [[c _]] (contains? (pair-chars :close) c)) chars))]
+            (editor/replace ed startloc kl "")
+            (if-let [kl (some (fn [[c loc]]
+                                (when-let [mloc (find-match ed loc c)]
+                                  (when (> (:line mloc) (:line loc))
+                                    mloc))) (filter (fn [[c _]] (contains? (pair-chars :open) c)) chars))]
+              (editor/replace ed startloc (editor/adjust-loc kl 1) "")
+              (editor/operation ed (fn []
+                                 (cmd/exec! :editor.kill-line)
+                                 (editor/move-cursor ed (editor/adjust-loc startloc -1)))))))
+        ))))
 
 (defn wrap-region [ed [startloc endloc] p]
   (editor/operation ed (fn []
