@@ -9,7 +9,7 @@ Additional Paredit functionality for Light Table. It aims to add Paredit functio
 
 Clone this repository into your Light Table plugins folder.
 
-##Commands## 
+##Commands##
 
 ###Delete###
 
