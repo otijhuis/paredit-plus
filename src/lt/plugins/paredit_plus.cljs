@@ -281,11 +281,12 @@
 
 (defn paredit-forward-delete [ed]
   (let [loc (editor/->cursor ed)
+        nloc (editor/adjust-loc loc 1)
         c (char-at-loc ed loc)
         nc (char-at-loc ed (editor/adjust-loc loc 1))
         pc (char-at-loc ed (editor/adjust-loc loc -1))
         pair (char->pair c)
-        tokentype (editor/->token-type ed loc)]
+        tokentype (editor/->token-type ed nloc)]
     (cond
      (and tokentype
           (str-contains? tokentype "comment")) (if nc
@@ -312,7 +313,7 @@
         nloc (editor/adjust-loc loc 1)
         c (char-at-loc ed loc)
         pc (char-at-loc ed (editor/adjust-loc loc -1))
-        tokentype (editor/->token-type ed ploc)]
+        tokentype (editor/->token-type ed loc)]
     (cond
      (not pc) (editor/replace ed loc (find-pos-h ed loc -1) "")
      (and tokentype
