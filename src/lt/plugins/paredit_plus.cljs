@@ -167,6 +167,8 @@
       (= next-loc l) '()
       :else (lazy-seq (locate-chars ed next-loc cs dir)))))
 
+(defn locate-chars-on-line [ed l cs dir]
+  (take-while (fn [[c loc]] (= (:line l) (:line loc))) (locate-chars ed l cs dir)))
 
 (defn find-unbalanced
   ([ed l cs dir]
@@ -325,6 +327,35 @@
                                          (editor/move-cursor ed ploc))
      (contains? (pair-chars :close) pc) (editor/move-cursor ed ploc)
      :else (editor/replace ed loc ploc ""))))
+
+(defn paredit-duplicate [ed]
+  (let [startloc (editor/->cursor ed)
+        startindex (editor/pos->index ed startloc)
+        all-pair-chars (clojure.set/union (pair-chars :open) (pair-chars :close))
+        endloc (loop [startloc startloc
+                       chars (locate-chars-on-line ed startloc all-pair-chars :forward)]
+                  (if-not (empty? chars)
+                    (let [[c loc] (first chars)]
+                      (when-let [mloc (find-match ed loc c)]
+                        (let [sline (:line loc)
+                              mline (:line mloc)
+                              mindex (editor/pos->index ed mloc)]
+                          (cond
+                           (< mindex startindex) loc
+                           (> mline sline) (recur mloc (locate-chars-on-line ed mloc all-pair-chars :forward))
+                           :else (recur startloc (rest chars))))))
+                    (find-pos-h ed {:ch 0 :line (inc (:line startloc))} -1)))]
+    (let [text-to-dupl (editor/range ed startloc endloc)]
+      (editor/operation ed (fn []
+                             (editor/replace ed startloc endloc (str text-to-dupl "\n" text-to-dupl))
+                             (editor/move-cursor ed (find-pos-h ed startloc (inc (count text-to-dupl))))
+                             (editor/indent-lines ed startloc (find-pos-h ed endloc (inc (count text-to-dupl)))))))))
+
+(cmd/command {:command :paredit-plus.duplicate
+              :desc "Paredit Plus: Duplicate"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (paredit-duplicate ed)))})
 
 (cmd/command {:command :paredit-plus.forward-delete
               :desc "Paredit Plus: Forward Delete"
