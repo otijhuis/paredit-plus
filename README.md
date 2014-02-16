@@ -11,6 +11,14 @@ Clone this repository into your Light Table plugins folder.
 
 ##Commands##
 
+###Duplicate###
+
+**Paredit Plus: Duplicate**
+
+	// cursor on colon (:)
+	{:test "abcd"} => {:test "abcd"
+					   :test "abcd"}
+
 ###Delete###
 
 **Paredit Plus: Forward Delete**

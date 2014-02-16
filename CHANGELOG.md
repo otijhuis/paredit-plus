@@ -1,4 +1,22 @@
 
+        Release Notes - Paredit-Plus - Version 0.0.4
+                            
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-16'>PAREDIT-16</a>] -         Forward/backward delete checks token-type on wrong char
+</li>
+</ul>
+            
+<h2>        New Feature
+</h2>
+<ul>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-9'>PAREDIT-9</a>] -         Add command to duplicate forms and collections entries
+</li>
+</ul>
+
+Also updated README (thanks Gabriel Horner)
+
         Release Notes - Paredit-Plus - Version 0.0.3
             
 <h2>        Bug
