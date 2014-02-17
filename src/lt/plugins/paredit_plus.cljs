@@ -344,7 +344,7 @@
                            (< mindex startindex) loc
                            (> mline sline) (recur mloc (locate-chars-on-line ed mloc all-pair-chars :forward))
                            :else (recur startloc (rest chars))))))
-                    (find-pos-h ed {:ch 0 :line (inc (:line startloc))} -1)))]
+                    {:ch (editor/line-length ed (:line startloc)) :line (:line startloc)}))]
     (let [text-to-dupl (editor/range ed startloc endloc)]
       (editor/operation ed (fn []
                              (editor/replace ed startloc endloc (str text-to-dupl "\n" text-to-dupl))
