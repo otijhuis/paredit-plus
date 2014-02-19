@@ -7,9 +7,14 @@ Additional Paredit functionality for Light Table. It aims to add Paredit functio
 
 ##Installation##
 
-Clone this repository into your Light Table plugins folder.
+Install from the plugin manager within Light Table or clone this repository into your Light Table plugins folder.
 
 ##Commands##
+
+###Insert###
+
+**Paredit Plus: New line before pair close**  
+**Paredit Plus: New line after pair close**
 
 ###Duplicate###
 
@@ -21,12 +26,13 @@ Clone this repository into your Light Table plugins folder.
 
 ###Delete###
 
-**Paredit Plus: Forward Delete**
-**Paredit Plus: Backward Delete**
+**Paredit Plus: Forward delete**  
+**Paredit Plus: Backward delete**  
+**Paredit Plus: Delete inside current pair**
   
 ###Split/Join###
 
-**Paredit Plus: Join Sexps**
+**Paredit Plus: Join sexps**  
 Different from the emacs version.
 
 	(abc)_(bcd) => (abc_bcd)
@@ -34,16 +40,16 @@ Different from the emacs version.
 
 So it joins the first matching sexp surrounding the cursor wether they are directly next to the cursor or not. Personally I don't mind because it doesn't get in the way of the expected behaviour but still adds some extra functionality. It will only work on pairs though. Emacs paredit allows joining of text, this version doesn't.
 
-**Paredit Plus: Split Sexp**
+**Paredit Plus: Split sexp**
 
 	[abc_def] => [abc]_[def]
 	(abc_def) => (abc)_(def)
 
 ###Splice###
 
-**Paredit Plus: Splice Sexp Killing Forward**  
-**Paredit Plus: Splice Sexp Killing Backward**  
-**Paredit Plus: Splice Sexp**  
+**Paredit Plus: Splice sexp killing forward**  
+**Paredit Plus: Splice sexp killing backward**  
+**Paredit Plus: Splice sexp**  
 
 ###Kill###
 
@@ -59,13 +65,13 @@ Different from the emacs version. When in the middle of a word it will wrap the 
 
 All the wrap commands support selections.
 
-**Paredit Plus: Wrap Round**  
+**Paredit Plus: Wrap round**  
 	"some_text" => ("some text")
 	(something here) => ((something) here) ; with cursor somewhere on the word "something"
 
-**Paredit Plus: Wrap Square**  
-**Paredit Plus: Wrap Curly**  
-**Paredit Plus: Wrap Quotes**  
+**Paredit Plus: Wrap square**  
+**Paredit Plus: Wrap curly**  
+**Paredit Plus: Wrap quotes**  
 
 ##Vim mode##
 
