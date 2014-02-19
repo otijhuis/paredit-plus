@@ -185,6 +185,21 @@
            (lazy-seq (cons [c loc] (find-unbalanced ed (rest locations) l cs dir)))))
        '())))
 
+(defn pair-boundary [ed l dir]
+  (let [index (editor/pos->index ed l)
+        find-loc (fn [type pred]
+                   (let [chars (locate-chars ed l (pair-chars type) dir)
+                         filtered-chars (filter (fn [[c loc]] (let [mloc (find-match ed loc c)]
+                                                               (pred (editor/pos->index ed mloc) index))) chars)]
+                     (when-let [[c loc] (first filtered-chars)]
+                       loc)))]
+    (condp = dir
+      :forward (find-loc :close <=)
+      :backward (find-loc :open >=))))
+
+(defn pair-bounds [ed l]
+  [(pair-boundary ed l :backward) (pair-boundary ed l :forward)])
+
 (defn paredit-kill [ed]
   (let [startloc (editor/->cursor ed)
         c (char-at-loc ed startloc)
