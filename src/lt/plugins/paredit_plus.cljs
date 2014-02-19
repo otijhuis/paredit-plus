@@ -379,43 +379,43 @@
                         (paredit-duplicate ed)))})
 
 (cmd/command {:command :paredit-plus.forward-delete
-              :desc "Paredit Plus: Forward Delete"
+              :desc "Paredit Plus: Forward delete"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-forward-delete ed)))})
 
 (cmd/command {:command :paredit-plus.backward-delete
-              :desc "Paredit Plus: Backward Delete"
+              :desc "Paredit Plus: Backward delete"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-backward-delete ed)))})
 
 (cmd/command {:command :paredit-plus.join-sexps
-              :desc "Paredit Plus: Join Sexps"
+              :desc "Paredit Plus: Join sexps"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-join-sexps ed)))})
 
 (cmd/command {:command :paredit-plus.split-sexp
-              :desc "Paredit Plus: Split Sexp"
+              :desc "Paredit Plus: Split sexp"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-split-sexp ed)))})
 
 (cmd/command {:command :paredit-plus.splice-sexp-killing-forward
-              :desc "Paredit Plus: Splice Sexp Killing Forward"
+              :desc "Paredit Plus: Splice sexp killing forward"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-splice-sexp-kill ed :forward)))})
 
 (cmd/command {:command :paredit-plus.splice-sexp-killing-backward
-              :desc "Paredit Plus: Splice Sexp Killing Backward"
+              :desc "Paredit Plus: Splice sexp killing backward"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-splice-sexp-kill ed :backward)))})
 
 (cmd/command {:command :paredit-plus.splice-sexp
-              :desc "Paredit Plus: Splice Sexp"
+              :desc "Paredit Plus: Splice sexp"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-splice-sexp ed)))})
@@ -427,25 +427,25 @@
                         (paredit-kill ed)))})
 
 (cmd/command {:command :paredit-plus.wrap-round
-              :desc "Paredit Plus: Wrap Round"
+              :desc "Paredit Plus: Wrap round"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-wrap-with-pair ed (char->pair "("))))})
 
 (cmd/command {:command :paredit-plus.wrap-square
-              :desc "Paredit Plus: Wrap Square"
+              :desc "Paredit Plus: Wrap square"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-wrap-with-pair ed (char->pair "["))))})
 
 (cmd/command {:command :paredit-plus.wrap-curly
-              :desc "Paredit Plus: Wrap Curly"
+              :desc "Paredit Plus: Wrap curly"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-wrap-with-pair ed (char->pair "{"))))})
 
 (cmd/command {:command :paredit-plus.wrap-quote
-              :desc "Paredit Plus: Wrap Quote"
+              :desc "Paredit Plus: Wrap quote"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-wrap-with-pair ed (char->pair "\""))))})
