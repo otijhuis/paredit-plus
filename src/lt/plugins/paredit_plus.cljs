@@ -380,6 +380,14 @@
                                                (move-cursor-along-pair ed (editor/->cursor ed) :forward :before)
                                                (cmd/exec! :editor.new-line-indent)))))})
 
+(cmd/command {:command :paredit-plus.new-line-after-pair-close
+              :desc "Paredit Plus: New line after pair close"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (editor/operation ed (fn []
+                                               (move-cursor-along-pair ed (editor/->cursor ed) :forward :after)
+                                               (cmd/exec! :editor.new-line-indent)))))})
+
 (cmd/command {:command :paredit-plus.duplicate
               :desc "Paredit Plus: Duplicate"
               :exec (fn []
