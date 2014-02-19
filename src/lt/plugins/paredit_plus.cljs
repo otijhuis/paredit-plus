@@ -200,6 +200,12 @@
 (defn pair-bounds [ed l]
   [(pair-boundary ed l :backward) (pair-boundary ed l :forward)])
 
+(defn move-cursor-along-pair [ed l dir side]
+  (let [loc (pair-boundary ed l dir)
+        adjustment {:before 0
+                    :after 1}]
+    (editor/move-cursor ed (editor/adjust-loc loc (side adjustment)))))
+
 (defn paredit-kill [ed]
   (let [startloc (editor/->cursor ed)
         c (char-at-loc ed startloc)
