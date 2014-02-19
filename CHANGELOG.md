@@ -1,4 +1,34 @@
 
+        Release Notes - Paredit-Plus - Version 0.0.5
+                    
+<h2>        Sub-task
+</h2>
+<ul>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-21'>PAREDIT-21</a>] -         Add function to determine pair bounds
+</li>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-22'>PAREDIT-22</a>] -         Add function that moves cursor to start or end of pair and before or after pair char
+</li>
+</ul>
+        
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-18'>PAREDIT-18</a>] -         Duplicating form at end of file not working correctly when not followed by newline
+</li>
+</ul>
+            
+<h2>        New Feature
+</h2>
+<ul>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-4'>PAREDIT-4</a>] -         Add command to add newline right before end of current pair
+</li>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-19'>PAREDIT-19</a>] -         Add command to add newline right after end of current pair
+</li>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-26'>PAREDIT-26</a>] -         Add command to kill everything inside a pair
+</li>
+</ul>
+        
+
         Release Notes - Paredit-Plus - Version 0.0.4
                             
 <h2>        Bug
