@@ -372,6 +372,14 @@
                              (editor/move-cursor ed (find-pos-h ed startloc (inc (count text-to-dupl))))
                              (editor/indent-lines ed startloc (find-pos-h ed endloc (inc (count text-to-dupl)))))))))
 
+(cmd/command {:command :paredit-plus.new-line-before-pair-close
+              :desc "Paredit Plus: New line before pair close"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (editor/operation ed (fn []
+                                               (move-cursor-along-pair ed (editor/->cursor ed) :forward :before)
+                                               (cmd/exec! :editor.new-line-indent)))))})
+
 (cmd/command {:command :paredit-plus.duplicate
               :desc "Paredit Plus: Duplicate"
               :exec (fn []
