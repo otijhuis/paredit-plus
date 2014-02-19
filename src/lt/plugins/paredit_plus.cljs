@@ -372,6 +372,10 @@
                              (editor/move-cursor ed (find-pos-h ed startloc (inc (count text-to-dupl))))
                              (editor/indent-lines ed startloc (find-pos-h ed endloc (inc (count text-to-dupl)))))))))
 
+(defn delete-pair-contents [ed l]
+  (let [[start end] (pair-bounds ed l)]
+    (editor/replace ed (editor/adjust-loc start 1) end "")))
+
 (cmd/command {:command :paredit-plus.new-line-before-pair-close
               :desc "Paredit Plus: New line before pair close"
               :exec (fn []
@@ -393,6 +397,12 @@
               :exec (fn []
                       (when-let [ed (pool/last-active)]
                         (paredit-duplicate ed)))})
+
+(cmd/command {:command :paredit-plus.delete-pair-contents
+              :desc "Paredit Plus: Delete contents inside current pair"
+              :exec (fn []
+                      (when-let [ed (pool/last-active)]
+                        (delete-pair-contents ed (editor/->cursor ed))))})
 
 (cmd/command {:command :paredit-plus.forward-delete
               :desc "Paredit Plus: Forward delete"
