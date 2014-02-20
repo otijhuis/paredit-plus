@@ -2,8 +2,7 @@
 
 Additional Paredit functionality for Light Table. It aims to add Paredit functions to Light Table which aren't supported (at least not yet) in the already available Paredit plugin.
 
-*While I'm already using it myself it will likely have some rough edges and it definitely needs some cleaning up/refactoring. That said I'd really appreciate feedback and some testing help.
-*
+*While I'm already using it myself it will likely have some rough edges and it definitely needs some cleaning up/refactoring. That said I'd really appreciate feedback and some testing help. Besides the fact that I really missed the emacs paredit functionality it's also a "learn more about clojure/clojurescriptlighttable" personal project. I'm aware I could use some better abstractions in some cases. I hope to steadily improve the codebase.*
 
 ##Installation##
 
