@@ -44,11 +44,12 @@ So it joins the first matching sexp surrounding the cursor wether they are direc
 	[abc_def] => [abc]_[def]
 	(abc_def) => (abc)_(def)
 
-###Splice###
+###Depth-Changing###
 
 **Paredit Plus: Splice sexp killing forward**  
 **Paredit Plus: Splice sexp killing backward**  
-**Paredit Plus: Splice sexp**  
+**Paredit Plus: Splice sexp**
+**Paredit Plus: Raise sexp**  
 
 ###Kill###
 
