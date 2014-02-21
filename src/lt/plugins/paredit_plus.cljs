@@ -375,13 +375,31 @@
   (when-let [[start end] (pair-bounds ed l)]
     (editor/replace ed (editor/adjust-loc start 1) end "")))
 
-(cmd/command {:command :paredit-plus.new-line-before-pair-close
-              :desc "Paredit Plus: New line before pair close"
+(defn paredit-raise-sexp [ed l]
+  (let [c (char-at-loc ed l)
+        token (editor/->token ed (editor/adjust-loc l 1))
+        tokentype (:type token)
+        delete-surrounding (fn [[startloc endloc]]
+                             (when-let [[p-startloc p-endloc] (pair-bounds ed startloc)]
+                                            (editor/operation ed (fn []
+                                                                   (editor/replace ed (editor/adjust-loc endloc 1) (editor/adjust-loc p-endloc 1) "")
+                                                                   (editor/replace ed p-startloc startloc "")))))]
+    (cond
+     (and tokentype (str-contains? tokentype "comment") (not (str-contains? tokentype "comment-form"))) (notifos/set-msg! "Illegal context: not available in comments")
+     (and tokentype (str-contains? tokentype "string")) (delete-surrounding (string-bounds ed l))
+     (contains? (pair-chars :all) c) (when-let [mloc (find-match ed l c)]
+                                       (delete-surrounding (sort-by #(editor/pos->index ed %) [l mloc])))
+     (or (whitespace? c) (nil? c)) (let [nloc (find-pos-h ed l 1)]
+                       (when-not (= l nloc)
+                         (recur ed nloc)))
+     :else (let [line (:line l)]
+             (delete-surrounding [{:line line :ch (:start token)} (editor/adjust-loc {:line line :ch (:end token)} -1)])))))
+
+(cmd/command {:command :paredit-plus.raise-sexp
+              :desc "Paredit Plus: Raise sexp"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (editor/operation ed (fn []
-                                               (move-cursor-along-pair ed (editor/->cursor ed) :forward :before)
-                                               (cmd/exec! :editor.new-line-indent)))))})
+                        (paredit-raise-sexp ed (editor/->cursor ed))))})
 
 (cmd/command {:command :paredit-plus.new-line-after-pair-close
               :desc "Paredit Plus: New line after pair close"
