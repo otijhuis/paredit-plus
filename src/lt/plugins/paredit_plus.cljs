@@ -17,7 +17,9 @@
   (get directions dir))
 
 (defn pair-chars [t]
-  (set (map t pairs)))
+  (if (= t :all)
+    (clojure.set/union (pair-chars :open) (pair-chars :close))
+    (set (map t pairs))))
 
 (defn pair->set [p]
   (set ((juxt :open :close) p)))
@@ -221,7 +223,7 @@
 (defn paredit-kill [ed]
   (let [startloc (editor/->cursor ed)
         c (char-at-loc ed startloc)
-        all-pair-chars (clojure.set/union (pair-chars :open) (pair-chars :close))]
+        all-pair-chars (pair-chars :all)]
     (if (contains? all-pair-chars c)
       (when-let [matchloc (find-match ed startloc c)]
         (if (> (editor/pos->index ed matchloc) (editor/pos->index ed startloc))
@@ -363,7 +365,7 @@
 (defn paredit-duplicate [ed]
   (let [startloc (editor/->cursor ed)
         startindex (editor/pos->index ed startloc)
-        all-pair-chars (clojure.set/union (pair-chars :open) (pair-chars :close))
+        all-pair-chars (pair-chars :all)
         endloc (loop [startloc startloc
                        chars (locate-chars-on-line ed startloc all-pair-chars :forward)]
                   (if-not (empty? chars)
