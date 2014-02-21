@@ -1,4 +1,33 @@
 
+        Release Notes - Paredit-Plus - Version 0.0.6
+                            
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-27'>PAREDIT-27</a>] -         Kill jumps prematurely into preceding sexp
+</li>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-29'>PAREDIT-29</a>] -         Surrounding pair bounds not determined correctly
+</li>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-30'>PAREDIT-30</a>] -         Wrapping functions include one character too many at the end
+</li>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-31'>PAREDIT-31</a>] -         Locate-chars always finds strings, even if the set doesn&#39;t contain the open/close quote
+</li>
+</ul>
+        
+<h2>        Improvement
+</h2>
+<ul>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-32'>PAREDIT-32</a>] -         Pass location to functions from command instead of using (editor/-&gt;cursor ed) inside function
+</li>
+</ul>
+    
+<h2>        New Feature
+</h2>
+<ul>
+<li>[<a href='https://81.4.106.141/jira/browse/PAREDIT-28'>PAREDIT-28</a>] -         Add paredit-raise-sexp
+</li>
+</ul>
+
         Release Notes - Paredit-Plus - Version 0.0.5
                     
 <h2>        Sub-task
