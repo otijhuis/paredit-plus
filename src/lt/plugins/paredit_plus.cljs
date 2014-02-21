@@ -232,10 +232,13 @@
               (cmd/exec! :editor.kill-line))))
         ))))
 
-(defn wrap-region [ed [startloc endloc] p]
-  (editor/operation ed (fn []
-                         (editor/replace ed (editor/adjust-loc endloc 1) (:close p))
-                         (editor/replace ed startloc (:open p)))))
+(defn wrap-region
+  ([ed [startloc endloc] p]
+   (wrap-region ed [startloc endloc] p false))
+  ([ed [startloc endloc] p end-inclusive?]
+   (editor/operation ed (fn []
+                          (editor/replace ed (editor/adjust-loc endloc (if end-inclusive? 1 0)) (:close p))
+                          (editor/replace ed startloc (:open p))))))
 
 (defn paredit-wrap-with-pair [ed p]
   (let [loc (editor/->cursor ed)
@@ -245,12 +248,12 @@
                               (wrap-region ed [(:from bounds) (:to bounds)] p))
      (comment|string|char? ed loc true) (notifos/set-msg! "Illegal context: not available in comments or escaped char")
      (comment|string|char? ed loc false) (when-let [bounds (string-bounds ed loc)]
-                                         (wrap-region ed bounds p))
+                                           (wrap-region ed bounds p true))
      (char->pair c) (when-let [match-loc (find-match ed loc c)]
-                      (wrap-region ed (sort-by #(editor/pos->index ed %) [loc match-loc]) p))
+                      (wrap-region ed (sort-by #(editor/pos->index ed %) [loc match-loc]) p true))
      :else (let [token (editor/->token ed (editor/adjust-loc loc 1))
                  startloc {:line (:line loc) :ch (:start token)}
-                 endloc (editor/adjust-loc {:line (:line loc) :ch (:end token)} -1)]
+                 endloc {:line (:line loc) :ch (:end token)}]
              (wrap-region ed [startloc endloc] p)))))
 
 (defn paredit-splice-sexp [ed]
@@ -369,7 +372,7 @@
                              (editor/indent-lines ed startloc (find-pos-h ed endloc (inc (count text-to-dupl)))))))))
 
 (defn delete-pair-contents [ed l]
-  (let [[start end] (pair-bounds ed l)]
+  (when-let [[start end] (pair-bounds ed l)]
     (editor/replace ed (editor/adjust-loc start 1) end "")))
 
 (cmd/command {:command :paredit-plus.new-line-before-pair-close
