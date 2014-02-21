@@ -6,6 +6,9 @@
             [lt.objs.notifos :as notifos]
             [lt.util.cljs :refer [str-contains?]]))
 
+(defn whitespace? [s]
+  (contains? #{" " "\t" "\r" "\n" "\f"} s))
+
 (def pairs [{:type :list :open "(" :close ")"}
             {:type :map :open "{" :close "}"}
             {:type :string :open "\"" :close "\""}
