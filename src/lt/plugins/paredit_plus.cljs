@@ -144,35 +144,47 @@
                                         (recur (rest chars) (dec stack)))
                     :else (recur (rest chars) stack)))))))))
 
-(defn locate-chars [ed l cs dir]
-  (let [next-loc (find-pos-h ed l (dir->int dir))
-        c (char-at-loc ed l)
-        pair (char->pair c)]
-    (cond
-     (and
-      pair
-      (= (:type pair) :string)) (let [token (editor/->token ed (editor/adjust-loc l 1))
-                                      t (:type token)
-                                      start (:start token)
-                                      end (- (:end token) 1)]
-                                  (if (and
-                                       (= t "string")
-                                       (or (= start (:ch l)) (= end (:ch l))))
-                                    (lazy-seq (cons [c l] (locate-chars ed next-loc cs dir)))
-                                    (lazy-seq (locate-chars ed next-loc cs dir))))
+(defn locate-chars
+  ([ed l cs dir include-start?]
+   (let [l (if include-start?
+             l
+             (find-pos-h ed l (dir->int dir)))]
+     (locate-chars ed l cs dir)))
+  ([ed l cs dir]
+   (let [next-loc (find-pos-h ed l (dir->int dir))
+         c (char-at-loc ed l)
+         pair (char->pair c)]
+     (cond
+      (and
+       pair
+       (= (:type pair) :string)
+       (contains? cs c)) (let [token (editor/->token ed (editor/adjust-loc l 1))
+                                       t (:type token)
+                                       start (:start token)
+                                       end (- (:end token) 1)]
+                                   (if (and
+                                        (= t "string")
+                                        (or (= start (:ch l)) (= end (:ch l))))
+                                     (lazy-seq (cons [c l] (locate-chars ed next-loc cs dir)))
+                                     (lazy-seq (locate-chars ed next-loc cs dir))))
       (comment|string|char? ed l false) (lazy-seq (locate-chars ed next-loc cs dir))
       (contains? cs c) (if (= next-loc l)
                          (lazy-seq (cons [c l] '()))
                          (lazy-seq (cons [c l] (locate-chars ed next-loc cs dir))))
       (= next-loc l) '()
-      :else (lazy-seq (locate-chars ed next-loc cs dir)))))
+      :else (lazy-seq (locate-chars ed next-loc cs dir))))))
 
 (defn locate-chars-on-line [ed l cs dir]
   (take-while (fn [[c loc]] (= (:line l) (:line loc))) (locate-chars ed l cs dir)))
 
 (defn find-unbalanced
+  ([ed l dir]
+   (let [cs (condp = dir
+                  :forward (pair-chars :close)
+                  :backward (pair-chars :open))]
+     (find-unbalanced ed l cs dir)))
   ([ed l cs dir]
-     (find-unbalanced ed (locate-chars ed l cs dir) l cs dir))
+   (find-unbalanced ed (locate-chars ed l cs dir) l cs dir))
   ([ed locations l cs dir]
      (if-not (empty? locations)
        (let [[c loc] (first locations)]
