@@ -218,9 +218,7 @@
       (let [line (:line startloc)
             chars (take-while (fn [[c loc]] (= line (:line loc))) (locate-chars ed startloc all-pair-chars :forward))]
         (if (empty? chars)
-          (editor/operation ed (fn []
-                                 (cmd/exec! :editor.kill-line)
-                                 (editor/move-cursor ed (editor/adjust-loc startloc -1))))
+          (cmd/exec! :editor.kill-line)
           (if-let [kl (some (fn [[c loc]]
                               (when-let [mloc (find-match ed loc c)]
                                 (when (loc> ed startloc mloc)
@@ -231,9 +229,7 @@
                                   (when (> (:line mloc) (:line loc))
                                     mloc))) (filter (fn [[c _]] (contains? (pair-chars :open) c)) chars))]
               (editor/replace ed startloc (editor/adjust-loc kl 1) "")
-              (editor/operation ed (fn []
-                                 (cmd/exec! :editor.kill-line)
-                                 (editor/move-cursor ed (editor/adjust-loc startloc -1)))))))
+              (cmd/exec! :editor.kill-line))))
         ))))
 
 (defn wrap-region [ed [startloc endloc] p]
