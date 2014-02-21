@@ -248,58 +248,50 @@
                           (editor/replace ed (editor/adjust-loc endloc (if end-inclusive? 1 0)) (:close p))
                           (editor/replace ed startloc (:open p))))))
 
-(defn paredit-wrap-with-pair [ed p]
-  (let [loc (editor/->cursor ed)
-        c (char-at-loc ed loc)]
+(defn paredit-wrap-with-pair [ed l p]
+  (let [c (char-at-loc ed l)]
     (cond
      (editor/selection? ed) (let [bounds (editor/selection-bounds ed)]
                               (wrap-region ed [(:from bounds) (:to bounds)] p))
-     (comment|string|char? ed loc true) (notifos/set-msg! "Illegal context: not available in comments or escaped char")
-     (comment|string|char? ed loc false) (when-let [bounds (string-bounds ed loc)]
+     (comment|string|char? ed l true) (notifos/set-msg! "Illegal context: not available in comments or escaped char")
+     (comment|string|char? ed l false) (when-let [bounds (string-bounds ed l)]
                                            (wrap-region ed bounds p true))
-     (char->pair c) (when-let [match-loc (find-match ed loc c)]
-                      (wrap-region ed (sort-by #(editor/pos->index ed %) [loc match-loc]) p true))
-     :else (let [token (editor/->token ed (editor/adjust-loc loc 1))
-                 startloc {:line (:line loc) :ch (:start token)}
-                 endloc {:line (:line loc) :ch (:end token)}]
+     (char->pair c) (when-let [mloc (find-match ed l c)]
+                      (wrap-region ed (sort-by #(editor/pos->index ed %) [l mloc]) p true))
+     :else (let [token (editor/->token ed (editor/adjust-loc l 1))
+                 startloc {:line (:line l) :ch (:start token)}
+                 endloc {:line (:line l) :ch (:end token)}]
              (wrap-region ed [startloc endloc] p)))))
 
-(defn paredit-splice-sexp [ed]
-  (when-let [[c loc] (first (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) :forward))]
-    (when-let [match-loc (find-match ed loc c)]
+(defn paredit-splice-sexp [ed l]
+  (when-let [[c loc] (first (find-unbalanced ed l (pair-chars :close) :forward))]
+    (when-let [mloc (find-match ed loc c)]
       (editor/operation ed (fn []
                              (editor/replace ed loc (editor/adjust-loc loc 1) "")
-                             (editor/replace ed match-loc (editor/adjust-loc match-loc 1) ""))))))
+                             (editor/replace ed mloc (editor/adjust-loc mloc 1) ""))))))
 
-(defn paredit-splice-sexp-kill [ed dir]
-  (when-let [[c loc] (first (find-unbalanced ed (editor/->cursor ed) (pair-chars :close) :forward))]
-    (when-let [match-loc (find-match ed loc c)]
+(defn paredit-splice-sexp-kill [ed l dir]
+  (when-let [[c loc] (first (find-unbalanced ed l (pair-chars :close) :forward))]
+    (when-let [mloc (find-match ed loc c)]
       (condp = dir
         :backward (editor/operation ed (fn []
                               (editor/replace ed loc (editor/adjust-loc loc 1) "")
-                              (editor/replace ed match-loc (editor/->cursor ed) "")))
+                              (editor/replace ed mloc l "")))
         :forward (editor/operation ed (fn []
-                              (editor/replace ed (editor/->cursor ed) (editor/adjust-loc loc 1) "")
-                              (editor/replace ed match-loc (editor/adjust-loc match-loc 1) "")))))))
+                              (editor/replace ed l (editor/adjust-loc loc 1) "")
+                              (editor/replace ed mloc (editor/adjust-loc mloc 1) "")))))))
 
-(defn paredit-split-sexp [ed]
-  (let [l (editor/->cursor ed)]
-    (when-let [[c loc] (first (find-unbalanced ed l (pair-chars :close) :forward))]
-            (when-let [match-loc (find-match ed loc c)]
+(defn paredit-split-sexp [ed l]
+  (when-let [[c loc] (first (find-unbalanced ed l (pair-chars :close) :forward))]
+            (if (find-match ed loc c)
               (let [p (char->pair c)
                     s (str (:close p) " " (:open p))]
                 (editor/operation ed (fn []
                                     (editor/replace ed l s)
-                                    (editor/move-cursor ed (editor/adjust-loc l 1)))))))))
+                                    (editor/move-cursor ed (editor/adjust-loc l 1))))))))
 
-;; Works differently than the emacs version. Currently very greedy
-;; Will join the first matching sexps it finds, even if they are not next to eachother
-;; In case of strings it will remove the quotes
-;; Not sure I mind the fact it's greedy. Should behave like expected during normal usage
-;; Only when used in situations which are normally not allowed it behaves differently
-(defn paredit-join-sexps [ed]
-  (let [l (editor/->cursor ed)
-        [lc ll] (first (locate-chars ed l (pair-chars :close) :backward))
+(defn paredit-join-sexps [ed l]
+  (let [[lc ll] (first (locate-chars ed l (pair-chars :close) :backward))
         [rc rl] (first (locate-chars ed l (pair-chars :open) :forward))]
     (if (and lc rc)
       (if (= lc (opposite-char rc))
@@ -309,55 +301,55 @@
                                (editor/indent-lines ed ll rl "smart")))
         (notifos/set-msg! "Mismatched sexps")))))
 
-(defn paredit-forward-delete [ed]
-  (let [loc (editor/->cursor ed)
-        nloc (editor/adjust-loc loc 1)
-        c (char-at-loc ed loc)
-        nc (char-at-loc ed (editor/adjust-loc loc 1))
-        pc (char-at-loc ed (editor/adjust-loc loc -1))
+(defn paredit-forward-delete [ed l]
+  (let [l (editor/->cursor ed)
+        nloc (editor/adjust-loc l 1)
+        c (char-at-loc ed l)
+        nc (char-at-loc ed (editor/adjust-loc l 1))
+        pc (char-at-loc ed (editor/adjust-loc l -1))
         pair (char->pair c)
         tokentype (editor/->token-type ed nloc)]
     (cond
      (and tokentype
           (str-contains? tokentype "comment")) (if nc
-          (editor/replace ed loc (editor/adjust-loc loc 1) "")
+          (editor/replace ed l (editor/adjust-loc l 1) "")
           (editor/operation ed (fn []
-                                 (editor/replace ed loc (editor/adjust-loc loc 1) "")
-                                 (editor/move-cursor ed (editor/adjust-loc loc -1) ""))))
-     (escaped-char? ed loc) (editor/replace ed (editor/adjust-loc loc 1) (editor/adjust-loc loc -1) "")
-     (escapes-char? ed loc) (editor/replace ed loc (editor/adjust-loc loc 2) "")
+                                 (editor/replace ed l (editor/adjust-loc l 1) "")
+                                 (editor/move-cursor ed (editor/adjust-loc l -1) ""))))
+     (escaped-char? ed l) (editor/replace ed (editor/adjust-loc l 1) (editor/adjust-loc l -1) "")
+     (escapes-char? ed l) (editor/replace ed l (editor/adjust-loc l 2) "")
      pair (cond
            (and
             (contains? (pair-chars :close) c)
-            (not (escaped-char? ed loc))
-            (= pc (opposite-char c))) (editor/replace ed (editor/adjust-loc loc 1) (editor/adjust-loc loc -1) "")
-           nc (editor/move-cursor ed (editor/adjust-loc loc 1)))
-     nc (editor/replace ed loc (editor/adjust-loc loc 1) "")
+            (not (escaped-char? ed l))
+            (= pc (opposite-char c))) (editor/replace ed (editor/adjust-loc l 1) (editor/adjust-loc l -1) "")
+           nc (editor/move-cursor ed (editor/adjust-loc l 1)))
+     nc (editor/replace ed l (editor/adjust-loc l 1) "")
      :else (editor/operation ed (fn []
-                                 (editor/replace ed loc (editor/adjust-loc loc 1) "")
-                                 (editor/move-cursor ed (editor/adjust-loc loc -1) ""))))))
+                                 (editor/replace ed l (editor/adjust-loc l 1) "")
+                                 (editor/move-cursor ed (editor/adjust-loc l -1) ""))))))
 
-(defn paredit-backward-delete [ed]
-  (let [loc (editor/->cursor ed)
-        ploc (editor/adjust-loc loc -1)
-        nloc (editor/adjust-loc loc 1)
-        c (char-at-loc ed loc)
-        pc (char-at-loc ed (editor/adjust-loc loc -1))
-        tokentype (editor/->token-type ed loc)]
+(defn paredit-backward-delete [ed l]
+  (let [l (editor/->cursor ed)
+        ploc (editor/adjust-loc l -1)
+        nloc (editor/adjust-loc l 1)
+        c (char-at-loc ed l)
+        pc (char-at-loc ed (editor/adjust-loc l -1))
+        tokentype (editor/->token-type ed l)]
     (cond
-     (not pc) (editor/replace ed loc (find-pos-h ed loc -1) "")
+     (not pc) (editor/replace ed l (find-pos-h ed l -1) "")
      (and tokentype
-          (str-contains? tokentype "comment")) (editor/replace ed loc ploc "")
-     (escaped-char? ed ploc) (editor/replace ed loc (editor/adjust-loc loc -2) "")
+          (str-contains? tokentype "comment")) (editor/replace ed l ploc "")
+     (escaped-char? ed ploc) (editor/replace ed l (editor/adjust-loc l -2) "")
      (escapes-char? ed ploc) (editor/replace ed nloc ploc "")
      (contains? (pair-chars :open) pc) (if (= c (opposite-char pc))
                                          (editor/replace ed nloc ploc "")
                                          (editor/move-cursor ed ploc))
      (contains? (pair-chars :close) pc) (editor/move-cursor ed ploc)
-     :else (editor/replace ed loc ploc ""))))
+     :else (editor/replace ed l ploc ""))))
 
-(defn paredit-duplicate [ed]
-  (let [startloc (editor/->cursor ed)
+(defn paredit-duplicate [ed l]
+  (let [startloc l
         startindex (editor/pos->index ed startloc)
         all-pair-chars (pair-chars :all)
         endloc (loop [startloc startloc
@@ -403,7 +395,7 @@
               :desc "Paredit Plus: Duplicate"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-duplicate ed)))})
+                        (paredit-duplicate ed (editor/->cursor ed))))})
 
 (cmd/command {:command :paredit-plus.delete-pair-contents
               :desc "Paredit Plus: Delete contents inside current pair"
@@ -415,43 +407,43 @@
               :desc "Paredit Plus: Forward delete"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-forward-delete ed)))})
+                        (paredit-forward-delete ed (editor/->cursor ed))))})
 
 (cmd/command {:command :paredit-plus.backward-delete
               :desc "Paredit Plus: Backward delete"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-backward-delete ed)))})
+                        (paredit-backward-delete ed (editor/->cursor ed))))})
 
 (cmd/command {:command :paredit-plus.join-sexps
               :desc "Paredit Plus: Join sexps"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-join-sexps ed)))})
+                        (paredit-join-sexps ed (editor/->cursor ed))))})
 
 (cmd/command {:command :paredit-plus.split-sexp
               :desc "Paredit Plus: Split sexp"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-split-sexp ed)))})
+                        (paredit-split-sexp ed (editor/->cursor ed))))})
 
 (cmd/command {:command :paredit-plus.splice-sexp-killing-forward
               :desc "Paredit Plus: Splice sexp killing forward"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-splice-sexp-kill ed :forward)))})
+                        (paredit-splice-sexp-kill ed (editor/->cursor ed) :forward)))})
 
 (cmd/command {:command :paredit-plus.splice-sexp-killing-backward
               :desc "Paredit Plus: Splice sexp killing backward"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-splice-sexp-kill ed :backward)))})
+                        (paredit-splice-sexp-kill ed (editor/->cursor ed) :backward)))})
 
 (cmd/command {:command :paredit-plus.splice-sexp
               :desc "Paredit Plus: Splice sexp"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-splice-sexp ed)))})
+                        (paredit-splice-sexp ed (editor/->cursor ed))))})
 
 (cmd/command {:command :paredit-plus.kill
               :desc "Paredit Plus: Kill"
@@ -463,22 +455,22 @@
               :desc "Paredit Plus: Wrap round"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-wrap-with-pair ed (char->pair "("))))})
+                        (paredit-wrap-with-pair ed (editor/->cursor ed) (char->pair "("))))})
 
 (cmd/command {:command :paredit-plus.wrap-square
               :desc "Paredit Plus: Wrap square"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-wrap-with-pair ed (char->pair "["))))})
+                        (paredit-wrap-with-pair ed (editor/->cursor ed) (char->pair "["))))})
 
 (cmd/command {:command :paredit-plus.wrap-curly
               :desc "Paredit Plus: Wrap curly"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-wrap-with-pair ed (char->pair "{"))))})
+                        (paredit-wrap-with-pair ed (editor/->cursor ed) (char->pair "{"))))})
 
 (cmd/command {:command :paredit-plus.wrap-quote
               :desc "Paredit Plus: Wrap quote"
               :exec (fn []
                       (when-let [ed (pool/last-active)]
-                        (paredit-wrap-with-pair ed (char->pair "\""))))})
+                        (paredit-wrap-with-pair ed (editor/->cursor ed) (char->pair "\""))))})
