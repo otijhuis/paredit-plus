@@ -65,7 +65,8 @@ Different from the emacs version. When in the middle of a word it will wrap the 
 
 All the wrap commands support selections.
 
-**Paredit Plus: Wrap round**  
+**Paredit Plus: Wrap round**
+
 	"some_text" => ("some text")
 	(something here) => ((something) here) ; with cursor somewhere on the word "something"
 
@@ -77,15 +78,15 @@ All the wrap commands support selections.
 
 I have the following added to my *user.behaviors* file for easy usage in vim mode:
 
-		;; The editor tag is applied to all editors
-		     :editor [:lt.objs.editor/no-wrap
-		              :lt.plugins.vim/activate-vim
-		              (:lt.plugins.vim/map-keys {"\\wr" ":ltexec paredit-plus.wrap-round"
-		                                         "\\ws" ":ltexec paredit-plus.wrap-square"
-		                                         "\\wc" ":ltexec paredit-plus.wrap-curly"
-		                                         "\\wq" ":ltexec paredit-plus.wrap-quote"
-		                                         "\\bs" ":ltexec paredit-plus.splice-sexp-killing-backward"
-		                                         "\\fs" ":ltexec paredit-plus.splice-sexp-killing-forward"})
+	;; The editor tag is applied to all editors
+	     :editor [:lt.objs.editor/no-wrap
+	              :lt.plugins.vim/activate-vim
+	              (:lt.plugins.vim/map-keys {"\\wr" ":ltexec paredit-plus.wrap-round"
+	                                         "\\ws" ":ltexec paredit-plus.wrap-square"
+	                                         "\\wc" ":ltexec paredit-plus.wrap-curly"
+	                                         "\\wq" ":ltexec paredit-plus.wrap-quote"
+	                                         "\\bs" ":ltexec paredit-plus.splice-sexp-killing-backward"
+	                                         "\\fs" ":ltexec paredit-plus.splice-sexp-killing-forward"})
 
 ##Known issues##
 
